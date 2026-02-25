@@ -1,0 +1,565 @@
+/**
+ * app.css – Global styles for the Fleet Dashboard
+ *
+ * Organisation:
+ *   1. Google Fonts import
+ *   2. Design tokens  (CSS custom properties)
+ *   3. Reset & base
+ *   4. Layout         (header, app-grid)
+ *   5. Sidebar left   (fleet bar, search, vehicle list)
+ *   6. Map panel
+ *   7. Sidebar right  (detail header, stat grid, tabs, date row)
+ *   8. Tab content    (trips, eco events)
+ *   9. Shared utilities (state messages, spinner, scrollbar)
+ */
+
+/* ============================================================
+   1. Fonts
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;400;600;700&display=swap');
+
+/* ============================================================
+   2. Design tokens
+   ============================================================ */
+
+:root {
+  /* Backgrounds – darkest to lightest */
+  --bg:      #0b0e14;
+  --surface: #131720;
+  --panel:   #1a2030;
+  --border:  #242d3d;
+
+  /* Text */
+  --text:  #c8d0e0;
+  --muted: #4a5568;
+
+  /* Accent palette */
+  --amber: #f5a623;
+  --green: #3dd68c;
+  --red:   #ff4757;
+  --blue:  #4fc3f7;
+
+  /* Typography */
+  --mono: 'Space Mono', monospace;
+  --sans: 'Barlow Condensed', sans-serif;
+}
+
+/* ============================================================
+   3. Reset & base
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #app {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+}
+
+/* ============================================================
+   4. Layout
+   ============================================================ */
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Pulsing dot in the logo mark */
+.logo-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--amber);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--amber);
+  animation: pulse 2s infinite;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.badge {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.badge span { color: var(--amber); }
+
+/* ── Three-column grid ───────────────────────────────────────────────────── */
+
+.app-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  height: calc(100vh - 56px);
+  transition: grid-template-columns 0.25s ease;
+}
+.app-grid.panel-expanded {
+  grid-template-columns: 280px 1fr 580px;
+}
+
+/* ============================================================
+   5. Sidebar left
+   ============================================================ */
+
+.sidebar-left {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Fleet summary bar (moving / idle / avg speed) ───────────────────────── */
+
+.fleet-bar { display: flex; border-bottom: 1px solid var(--border); }
+
+.fleet-stat {
+  flex: 1;
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fleet-stat:last-child {
+  border-right: none;
+  cursor: default; /* avg speed is display-only */
+}
+.fleet-stat:hover:not(:last-child) { background: var(--panel); }
+.fleet-stat.active {
+  background: rgba(245, 166, 35, 0.1);
+  border-bottom: 2px solid var(--amber);
+}
+
+.fleet-stat-n        { font-family: var(--mono); font-size: 22px; color: var(--amber); line-height: 1; }
+.fleet-stat-n.muted  { color: var(--muted); }
+.fleet-stat-n.blue   { color: var(--blue); }
+.fleet-stat-l        { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Search box ──────────────────────────────────────────────────────────── */
+
+.sidebar-section {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.search-box {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-box:focus        { border-color: var(--amber); }
+.search-box::placeholder { color: var(--muted); }
+
+/* ── Vehicle list ────────────────────────────────────────────────────────── */
+
+.vehicle-list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.vehicle-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(36, 45, 61, 0.5);
+  border-left: 3px solid transparent;
+  transition: background 0.15s;
+}
+.vehicle-item:hover  { background: var(--panel); }
+.vehicle-item.active { background: rgba(245, 166, 35, 0.08); border-left-color: var(--amber); }
+
+/* Status indicator dot */
+.v-status         { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.v-status.moving  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
+.v-status.idle    { background: var(--muted); }
+
+.v-info  { flex: 1; min-width: 0; }
+.v-name  { font-weight: 600; font-size: 15px; color: #e8edf5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v-spz   { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.v-speed { font-family: var(--mono); font-size: 13px; color: var(--amber); text-align: right; flex-shrink: 0; }
+.v-unit  { font-size: 9px; color: var(--muted); }
+
+/* ============================================================
+   6. Map panel
+   ============================================================ */
+
+.map-area     { position: relative; background: #060a10; }
+#map          { width: 100%; height: 100%; }
+
+/* Mode toggle buttons (LIVE / ROUTE HISTORY) – centred at the top */
+.map-top {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  gap: 6px;
+}
+
+/* FIT ALL / REFRESH buttons – bottom-left */
+.map-overlay {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 500;
+}
+
+.map-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.map-btn:hover    { border-color: var(--amber); color: var(--amber); }
+.map-btn.active   { background: var(--amber); color: #000; border-color: var(--amber); }
+.map-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Darken and desaturate the OSM tile layer to match the dark theme */
+.leaflet-tile { filter: brightness(0.7) saturate(0.8); }
+
+/* Dark-themed popup */
+.dark-popup .leaflet-popup-content-wrapper {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  padding: 0;
+}
+.dark-popup .leaflet-popup-content { margin: 0; }
+.dark-popup .leaflet-popup-tip-container { margin-top: -1px; }
+.dark-popup .leaflet-popup-tip { background: var(--surface); box-shadow: none; }
+.dark-popup .leaflet-popup-close-button { color: var(--muted); top: 6px; right: 8px; }
+.dark-popup .leaflet-popup-close-button:hover { color: var(--text); }
+
+.map-popup        { padding: 10px 14px; font-family: var(--mono); }
+.map-popup-name   { font-size: 14px; font-weight: 700; color: #e8edf5; margin-bottom: 4px; }
+.map-popup-sub    { font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+.map-popup-speed  { font-size: 11px; color: var(--text); }
+.map-popup-speed span { color: var(--amber); font-weight: 700; }
+
+/* Style the Leaflet zoom control to match the dark theme */
+.leaflet-control-zoom a {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* ============================================================
+   7. Sidebar right
+   ============================================================ */
+
+.sidebar-right {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Vehicle header ──────────────────────────────────────────────────────── */
+
+.detail-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.detail-name   { font-size: 20px; font-weight: 700; color: #e8edf5; line-height: 1; }
+.detail-sub    { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+.expand-btn {
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid var(--amber);
+  border-radius: 4px;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.expand-btn:hover { background: rgba(245, 166, 35, 0.28); }
+
+/* ── Key metrics grid ────────────────────────────────────────────────────── */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.stat-cell   { background: var(--surface); padding: 12px 14px; }
+.stat-label  { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+.stat-value  { font-family: var(--mono); font-size: 18px; color: var(--amber); margin-top: 3px; }
+.stat-value.amber { color: var(--amber); }
+.stat-value.green { color: var(--green); }
+.stat-value.blue  { color: var(--blue); }
+.stat-value.red   { color: var(--red); }
+.stat-value .unit { font-size: 11px; }
+
+/* ── Tab switcher ────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.tab:hover  { color: var(--text); }
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ── Date range picker ───────────────────────────────────────────────────── */
+
+.date-row {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.date-row input {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 5px 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+  outline: none;
+}
+.date-row input:focus { border-color: var(--amber); }
+.date-row button {
+  background: var(--amber);
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  color: #000;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.date-row button:hover { opacity: 0.85; }
+
+/* ============================================================
+   8. Tab content – trips & eco events
+   ============================================================ */
+
+/* ── Charts ──────────────────────────────────────────────────────────────── */
+
+.chart-wrap { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.chart-wrap canvas { display: block; width: 100% !important; }
+
+/* ── Trip rows ───────────────────────────────────────────────────────────── */
+
+.trip-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(36, 45, 61, 0.6);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.trip-item:hover { background: var(--panel); }
+
+.trip-row   { display: flex; justify-content: space-between; align-items: flex-start; }
+.trip-time  { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.trip-dist  { font-family: var(--mono); font-size: 12px; color: var(--blue); }
+.trip-addr  { font-size: 12px; color: var(--text); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trip-speeds { display: flex; gap: 10px; margin-top: 4px; }
+
+.speed-tag       { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; background: var(--panel); }
+.speed-tag.avg   { color: var(--green); }
+.speed-tag.max   { color: var(--red); }
+.speed-tag.muted { color: var(--muted); }
+
+/* ── Eco-driving event rows ──────────────────────────────────────────────── */
+
+.eco-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid rgba(36, 45, 61, 0.6); }
+
+/* Circular icon coloured by severity */
+.eco-icon       { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.eco-icon.sev0  { background: rgba(74, 85, 104, 0.3); }
+.eco-icon.sev1  { background: rgba(61, 214, 140, 0.15); }
+.eco-icon.sev2  { background: rgba(245, 166, 35, 0.15); }
+.eco-icon.sev3  { background: rgba(255, 71, 87, 0.15); }
+
+.eco-info  { flex: 1; min-width: 0; }
+.eco-type  { font-size: 13px; font-weight: 600; color: var(--text); }
+.eco-time  { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 1px; }
+
+/* Severity badge pill */
+.sev-badge      { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
+.sev-badge.sev0 { background: var(--panel); color: var(--muted); }
+.sev-badge.sev1 { background: rgba(61, 214, 140, 0.15); color: var(--green); }
+.sev-badge.sev2 { background: rgba(245, 166, 35, 0.15); color: var(--amber); }
+.sev-badge.sev3 { background: rgba(255, 71, 87, 0.15); color: var(--red); }
+
+/* ============================================================
+   9. Shared utilities
+   ============================================================ */
+
+/* Generic empty / loading message */
+.state-msg {
+  padding: 24px 14px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Keyframe animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Thin custom scrollbar (Webkit) */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ============================================================
+   10. Environment context strip
+   ============================================================ */
+
+.env-strip {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(79, 195, 247, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+}
+
+.env-weather {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--blue);
+  line-height: 1.4;
+}
+
+.env-address {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.env-loading {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
